@@ -243,11 +243,6 @@
         <!-- Anteprima del sito: originale e tradotto -->
         <section class="preview-card" id="previewCard" aria-label="Anteprima del sito" hidden>
           <header class="preview-bar">
-            <div class="segmented" role="group" aria-label="Versione del sito">
-              <button type="button" id="previewTabOriginal" aria-pressed="true">Originale</button>
-              <button type="button" id="previewTabTranslated" aria-pressed="false" disabled title="Disponibile al termine della traduzione">Tradotto</button>
-            </div>
-
             <div class="preview-page dropdown">
               <button type="button" class="dropdown-trigger compact" id="previewPageTrigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="previewPageList" aria-label="Pagina mostrata">
                 <span class="dropdown-value" id="previewPageText">—</span>
@@ -280,15 +275,34 @@
             </div>
           </header>
 
-          <div class="preview-stage" id="previewStage">
-            <div class="preview-scaler" id="previewScaler">
-              <div class="preview-viewport" id="previewViewport">
-                <iframe class="preview-frame" id="previewFrame" title="Anteprima del sito"
-                  sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
-                  referrerpolicy="no-referrer"></iframe>
+          <div class="preview-panes" id="previewPanes">
+            <section class="preview-pane" data-pane="original" aria-label="Sito originale">
+              <div class="pane-head"><span class="pane-dot"></span><span class="pane-title">Originale</span></div>
+              <div class="preview-stage">
+                <div class="preview-scaler">
+                  <div class="preview-viewport">
+                    <iframe class="preview-frame" title="Anteprima del sito originale"
+                      sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+                      referrerpolicy="no-referrer"></iframe>
+                  </div>
+                </div>
+                <div class="preview-status" role="status" hidden></div>
               </div>
-            </div>
-            <div class="preview-status" id="previewStatus" role="status" hidden></div>
+            </section>
+
+            <section class="preview-pane" data-pane="translated" aria-label="Sito tradotto">
+              <div class="pane-head"><span class="pane-dot translated"></span><span class="pane-title">Tradotto</span></div>
+              <div class="preview-stage">
+                <div class="preview-scaler">
+                  <div class="preview-viewport">
+                    <iframe class="preview-frame" title="Anteprima del sito tradotto"
+                      sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+                      referrerpolicy="no-referrer"></iframe>
+                  </div>
+                </div>
+                <div class="preview-status" role="status" hidden></div>
+              </div>
+            </section>
           </div>
         </section>
        </div>

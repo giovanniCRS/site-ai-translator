@@ -26,18 +26,12 @@ export const els = {
 
   // Anteprima
   previewCard: byId('previewCard'),
-  previewTabOriginal: byId('previewTabOriginal'),
-  previewTabTranslated: byId('previewTabTranslated'),
+  previewPanes: byId('previewPanes'),
   previewPageTrigger: byId('previewPageTrigger'),
   previewPageText: byId('previewPageText'),
   previewPageList: byId('previewPageList'),
   previewExpandBtn: byId('previewExpandBtn'),
   previewResetBtn: byId('previewResetBtn'),
-  previewStage: byId('previewStage'),
-  previewScaler: byId('previewScaler'),
-  previewViewport: byId('previewViewport'),
-  previewFrame: byId('previewFrame'),
-  previewStatus: byId('previewStatus'),
   deviceButtons: [...document.querySelectorAll('[data-device]')],
 
   // Azioni

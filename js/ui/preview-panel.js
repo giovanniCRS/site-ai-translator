@@ -7,25 +7,40 @@ const STAGE_PADDING = 12;
 const SMALL_SCREEN_PX = 700;
 
 /**
- * Card "Anteprima": mostra il sito originale e, a fine traduzione, quello tradotto.
- * Le pagine sono renderizzate in un iframe in sandbox e scalate per simulare lo schermo scelto.
+ * Card "Anteprima": mostra il sito originale e quello tradotto uno accanto all'altro.
+ * Ogni pannello ha il proprio iframe in sandbox e la propria memoria (cookie, localStorage),
+ * quindi le scelte fatte in un sito (cookie, lingua, età) non influenzano l'altro.
+ * Il selettore pagina e i link interni portano entrambi i pannelli sulla stessa pagina.
  */
 export function createPreviewPanel(els, { logger }) {
   const {
-    previewCard, previewTabOriginal, previewTabTranslated, previewPageTrigger, previewPageText, previewPageList,
-    previewExpandBtn, previewResetBtn, previewStage, previewScaler, previewViewport, previewFrame, previewStatus, deviceButtons,
+    previewCard, previewPanes, previewPageTrigger, previewPageText, previewPageList,
+    previewExpandBtn, previewResetBtn, deviceButtons,
   } = els;
 
-  // Cookie e localStorage condivisi tra originale e tradotto
-  const siteStorage = createPreviewStorage();
+  function createPane(key) {
+    const root = previewPanes.querySelector(`[data-pane="${key}"]`);
+    const q = (selector) => root.querySelector(selector);
+    return {
+      key,
+      stage: q('.preview-stage'),
+      scaler: q('.preview-scaler'),
+      viewport: q('.preview-viewport'),
+      frame: q('.preview-frame'),
+      status: q('.preview-status'),
+      source: null,
+      storage: createPreviewStorage(), // memoria separata per ogni sito
+      token: 0,
+    };
+  }
+
+  const panes = { original: createPane('original'), translated: createPane('translated') };
+  const allPanes = Object.values(panes);
 
   const state = {
-    sources: { original: null, translated: null },
-    mode: 'original',
     path: null,
-    device: window.innerWidth < SMALL_SCREEN_PX ? 'mobile' : 'desktop',
+    device: window.innerWidth < SMALL_SCREEN_PX ? 'mobile' : 'tablet',
     expanded: false,
-    renderToken: 0,
   };
 
   const pageDropdown = createDropdown({
@@ -36,29 +51,20 @@ export function createPreviewPanel(els, { logger }) {
     onChange: (path) => navigate(path),
   });
 
-  const currentSource = () => state.sources[state.mode];
-
   // ---------- Stato visivo ----------
-  function setStatus(kind, text = '') {
-    previewStatus.hidden = kind === null;
-    previewStatus.textContent = text;
-    previewStatus.dataset.kind = kind || '';
-  }
-
-  function syncTabs() {
-    const isOriginal = state.mode === 'original';
-    previewTabOriginal.setAttribute('aria-pressed', String(isOriginal));
-    previewTabTranslated.setAttribute('aria-pressed', String(!isOriginal));
+  function setStatus(pane, kind, text = '') {
+    pane.status.hidden = kind === null;
+    pane.status.textContent = text;
+    pane.status.dataset.kind = kind || '';
   }
 
   function syncDevices() {
     deviceButtons.forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.device === state.device)));
-    previewScaler.dataset.device = state.device;
+    allPanes.forEach((pane) => { pane.scaler.dataset.device = state.device; });
   }
 
   function syncPages() {
-    const source = currentSource();
-    const pages = source ? source.pages : [];
+    const pages = panes.original.source ? panes.original.source.pages : [];
     pageDropdown.setOptions(
       pages.map((p) => ({ value: p, label: `/${p}`, dot: false })),
       state.path
@@ -66,65 +72,61 @@ export function createPreviewPanel(els, { logger }) {
   }
 
   // ---------- Scala dell'iframe: simula la larghezza dello schermo scelto ----------
-  function layout() {
-    const availW = previewStage.clientWidth - STAGE_PADDING * 2;
-    const availH = previewStage.clientHeight - STAGE_PADDING * 2;
+  function layoutPane(pane) {
+    const availW = pane.stage.clientWidth - STAGE_PADDING * 2;
+    const availH = pane.stage.clientHeight - STAGE_PADDING * 2;
     if (availW <= 0 || availH <= 0) return;
 
     const deviceW = DEVICE_WIDTHS[state.device];
     const scale = Math.min(1, availW / deviceW);
 
-    previewScaler.style.width = `${Math.round(deviceW * scale)}px`;
-    previewScaler.style.height = `${availH}px`;
-    previewViewport.style.width = `${deviceW}px`;
-    previewViewport.style.height = `${availH / scale}px`;
-    previewViewport.style.transform = `scale(${scale})`;
+    pane.scaler.style.width = `${Math.round(deviceW * scale)}px`;
+    pane.scaler.style.height = `${availH}px`;
+    pane.viewport.style.width = `${deviceW}px`;
+    pane.viewport.style.height = `${availH / scale}px`;
+    pane.viewport.style.transform = `scale(${scale})`;
   }
 
-  new ResizeObserver(layout).observe(previewStage);
+  const layout = () => allPanes.forEach(layoutPane);
+  const observer = new ResizeObserver(layout);
+  allPanes.forEach((pane) => observer.observe(pane.stage));
 
   // ---------- Rendering ----------
-  async function render({ hash = '' } = {}) {
-    const source = currentSource();
-    if (!source) return;
+  async function renderPane(pane, { hash = '' } = {}) {
+    const token = ++pane.token;
 
-    if (!state.path) {
-      previewFrame.removeAttribute('srcdoc');
-      setStatus('empty', 'Nessuna pagina HTML da mostrare in questo progetto.');
+    if (!pane.source) {
+      pane.frame.removeAttribute('srcdoc');
+      setStatus(pane, 'empty', pane.key === 'translated' ? 'La versione tradotta comparirà qui al termine della traduzione.' : '');
       return;
     }
 
-    const token = ++state.renderToken;
-    setStatus('loading', 'Preparo l\'anteprima…');
+    if (!state.path) {
+      pane.frame.removeAttribute('srcdoc');
+      setStatus(pane, 'empty', 'Nessuna pagina HTML da mostrare in questo progetto.');
+      return;
+    }
+
+    setStatus(pane, 'loading', 'Preparo l\'anteprima…');
 
     try {
-      const { html } = await source.buildPage(state.path, { hash, storage: siteStorage.snapshot() });
-      if (token !== state.renderToken) return; // è partito un rendering più recente
-      previewFrame.srcdoc = html;
-      setStatus(null);
+      const { html } = await pane.source.buildPage(state.path, { hash, storage: pane.storage.snapshot() });
+      if (token !== pane.token) return; // è partito un rendering più recente
+      pane.frame.srcdoc = html;
+      setStatus(pane, null);
     } catch (err) {
-      if (token !== state.renderToken) return;
-      logger.error(`Anteprima di ${state.path} non riuscita: ${err.message}`);
-      setStatus('error', 'Impossibile mostrare questa pagina. Dettagli nel terminale.');
+      if (token !== pane.token) return;
+      logger.error(`Anteprima (${pane.key}) di ${state.path} non riuscita: ${err.message}`);
+      setStatus(pane, 'error', 'Impossibile mostrare questa pagina. Dettagli nel terminale.');
     }
   }
+
+  const renderAll = (opts) => Promise.all(allPanes.map((pane) => renderPane(pane, opts)));
 
   function navigate(path, hash = '') {
     state.path = path;
     syncPages();
-    render({ hash });
-  }
-
-  function setMode(mode) {
-    if (!state.sources[mode] || state.mode === mode) return;
-    state.mode = mode;
-
-    const source = currentSource();
-    if (!source.hasPage(state.path)) state.path = source.defaultPage;
-
-    syncTabs();
-    syncPages();
-    render();
+    renderAll({ hash });
   }
 
   // ---------- Espansione a tutto schermo ----------
@@ -137,9 +139,6 @@ export function createPreviewPanel(els, { logger }) {
   }
 
   // ---------- Eventi ----------
-  previewTabOriginal.addEventListener('click', () => setMode('original'));
-  previewTabTranslated.addEventListener('click', () => setMode('translated'));
-
   deviceButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       state.device = btn.dataset.device;
@@ -150,74 +149,63 @@ export function createPreviewPanel(els, { logger }) {
 
   previewExpandBtn.addEventListener('click', () => setExpanded(!state.expanded));
 
-  // Dimentica cookie e dati salvati dal sito (per rivedere banner cookie, verifica età, ecc.)
+  // Dimentica cookie e dati salvati dai due siti (per rivedere banner cookie, verifica età, ecc.)
   previewResetBtn.addEventListener('click', () => {
-    siteStorage.reset();
-    logger.info('Anteprima: cookie e dati del sito azzerati.');
-    render();
+    allPanes.forEach((pane) => pane.storage.reset());
+    logger.info('Anteprima: cookie e dati dei siti azzerati.');
+    renderAll();
   });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && state.expanded && !pageDropdown.isOpen()) setExpanded(false);
   });
 
-  // Click sui link interni dentro l'anteprima (messaggi dallo script iniettato nella pagina)
+  // Messaggi dallo script iniettato nelle pagine: scritture di memoria e click sui link interni
   window.addEventListener('message', (e) => {
-    if (e.source !== previewFrame.contentWindow) return;
+    const pane = allPanes.find((p) => e.source === p.frame.contentWindow);
+    if (!pane) return;
     const msg = e.data;
     if (!msg || msg.source !== PREVIEW_MESSAGE_SOURCE) return;
 
     if (msg.type === 'storage') {
-      siteStorage.apply(msg);
-      return;
-    }
-
-    if (msg.type === 'navigate' && currentSource()?.hasPage(msg.path)) {
-      navigate(msg.path, msg.hash);
+      pane.storage.apply(msg);
     } else if (msg.type === 'navigate') {
-      // Pagina PHP o non elencata: mostra comunque il messaggio dedicato
+      // Vale per entrambi i pannelli, così restano confrontabili (anche per pagine PHP o non elencate)
       state.path = msg.path;
-      render({ hash: msg.hash });
+      syncPages();
+      renderAll({ hash: msg.hash });
     } else if (msg.type === 'missing') {
       logger.warn(`Anteprima: il link "${msg.ref}" non punta a nessun file del progetto.`);
     }
   });
 
   syncDevices();
+  setStatus(panes.translated, 'empty', 'La versione tradotta comparirà qui al termine della traduzione.');
 
   // ---------- API pubblica ----------
   return {
-    // Nuovo progetto caricato: mostra l'originale e azzera il tradotto
+    // Nuovo progetto caricato: mostra l'originale e svuota il tradotto
     setOriginal(source) {
-      siteStorage.reset(); // nuovo progetto: nessun dato del sito precedente
-      state.sources = { original: source, translated: null };
-      state.mode = 'original';
+      allPanes.forEach((pane) => pane.storage.reset());
+      panes.original.source = source;
+      panes.translated.source = null;
       state.path = source.defaultPage;
 
-      previewTabTranslated.disabled = true;
-      previewTabTranslated.title = 'Disponibile al termine della traduzione';
       previewCard.hidden = false;
 
-      syncTabs();
       syncPages();
       layout();
-      render();
+      renderAll();
     },
 
-    // Traduzione completata: abilita la scheda "Tradotto" e la mostra
+    // Traduzione completata: il pannello di destra mostra il sito tradotto (l'originale non si ricarica)
     setTranslated(source) {
-      state.sources.translated = source;
-      state.mode = 'translated';
-      if (!source.hasPage(state.path)) state.path = source.defaultPage;
+      panes.translated.source = source;
+      renderPane(panes.translated);
 
-      previewTabTranslated.disabled = false;
-      previewTabTranslated.title = '';
-
-      syncTabs();
-      syncPages();
-      render();
-
-      if (!state.expanded && !previewCard.parentElement.classList.contains('side-by-side')) previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (!state.expanded && !previewCard.parentElement.classList.contains('side-by-side')) {
+        previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     },
   };
 }
