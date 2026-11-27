@@ -101,10 +101,16 @@
   gap: var(--s-3);
 }
 
-/* L'altezza dell'anteprima la decide la colonna dei riquadri: lo stage parte da 0 (flex-basis)
-   perché il suo contenuto (scaler) è dimensionato proprio sull'altezza dello stage. */
+/* L'altezza dell'anteprima la decide la colonna dei riquadri: gli stage partono da 0 (flex-basis)
+   perché il loro contenuto (scaler) è dimensionato proprio sull'altezza dello stage. */
 .work-layout.side-by-side .preview-card:not(.expanded) {
   min-height: 420px;
+}
+
+.work-layout.side-by-side .preview-card:not(.expanded) .preview-panes {
+  flex: 1 1 0;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .work-layout.side-by-side .preview-card:not(.expanded) .preview-stage {
