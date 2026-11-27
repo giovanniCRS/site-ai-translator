@@ -1,0 +1,202 @@
+.sidebar {
+  min-width: 0;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--line);
+  overflow: hidden;
+}
+
+/* Larghezza fissa: chiudendo la sidebar il contenuto viene ritagliato, non ricompresso */
+.sidebar-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  width: var(--sidebar-w);
+  height: 100%;
+  padding: var(--s-5) var(--s-4) var(--s-4);
+  overflow-y: auto;
+}
+
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  color: var(--accent);
+}
+
+.brand-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+
+.brand-sub {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--warn);
+  box-shadow: 0 0 0 3px var(--warn-soft);
+}
+
+.status-dot.ok {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px var(--ok-soft);
+}
+
+/* Pannelli */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+
+.panel-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sidebar-foot {
+  margin-top: auto;
+  padding: var(--s-1) var(--s-1) 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* ---------- Motore AI: apre il popup con API key e modello ---------- */
+.engine {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.engine-card {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  padding: var(--s-3);
+  text-align: left;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-lg);
+  transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+}
+
+.engine-card:hover {
+  background: var(--surface-2);
+  border-color: var(--accent);
+}
+
+.engine-card:active {
+  transform: scale(0.99);
+}
+
+.engine-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  color: var(--accent);
+}
+
+.engine-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.engine-title {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.1px;
+}
+
+.engine-model,
+.engine-status {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.engine-model span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engine-status {
+  color: var(--ink-3);
+}
+
+.engine-chevron {
+  flex-shrink: 0;
+  color: var(--accent);
+  transition: transform var(--t-fast);
+}
+
+.engine-card:hover .engine-chevron {
+  transform: translateX(2px);
+}
+
+.engine-hint {
+  padding-inline: var(--s-1);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.engine-hint strong {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Manca la API key: la card pulsa piano per invitare al click */
+.engine-card.needs-attention {
+  animation: engine-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes engine-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 5px var(--accent-soft); }
+}

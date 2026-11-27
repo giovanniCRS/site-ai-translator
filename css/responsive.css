@@ -1,0 +1,153 @@
+/* ---------- Tablet e mobile: la sidebar diventa un drawer ---------- */
+@media (max-width: 900px) {
+  .app,
+  .app.sidebar-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 40;
+    width: min(88vw, 340px);
+    box-shadow: var(--shadow-pop);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform var(--t-med) var(--ease), visibility 0s linear var(--t-med);
+  }
+
+  .sidebar.open {
+    transform: none;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+
+  .sidebar-inner {
+    width: 100%;
+    padding-top: var(--s-4);
+  }
+
+  .menu-btn {
+    display: grid;
+  }
+
+  .topbar-brand {
+    display: flex;
+  }
+
+  .topbar {
+    padding: 0 var(--s-4);
+  }
+
+  .work-scroll {
+    padding: var(--s-5) var(--s-4);
+  }
+
+  .console-dock {
+    height: 140px;
+  }
+
+  .console-bar,
+  .console-body {
+    padding-inline: var(--s-4);
+  }
+}
+
+/* Con la sidebar aperta lo stepper completo non ci sta: mostra solo il passo attivo */
+@media (max-width: 1180px) {
+  .step-item:not(.active) {
+    padding-right: 5px;
+  }
+
+  .step-item:not(.active) .step-label {
+    display: none;
+  }
+}
+
+/* Il brand in topbar cede spazio allo stepper quando serve */
+@media (max-width: 760px) {
+  .topbar-brand span {
+    display: none;
+  }
+}
+
+/* ---------- Mobile stretto ---------- */
+@media (max-width: 640px) {
+  :root {
+    --topbar-h: 56px;
+  }
+
+  .step-connector {
+    max-width: none;
+  }
+
+  .dropzone {
+    min-height: 220px;
+    padding: var(--s-5) var(--s-4);
+  }
+
+  .dropzone.has-project {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .dropzone.has-project .project-summary {
+    flex-basis: calc(100% - 44px - var(--s-4));
+  }
+
+  .dropzone.has-project .picker-row {
+    margin: 0;
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .dropzone.has-project .picker-row .btn-subtle {
+    flex: 1;
+  }
+
+  .control-card {
+    padding: var(--s-4);
+    gap: var(--s-4);
+  }
+
+  .actions-row > .btn-primary,
+  .actions-row > .btn-download {
+    flex: 1 1 100%;
+  }
+
+  /* Dialog come bottom sheet */
+  .dialog {
+    max-width: 100vw;
+    margin: auto 0 0;
+  }
+
+  .dialog-card {
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    border-bottom: none;
+    max-height: 90dvh;
+  }
+
+  .dialog[open] {
+    animation-name: sheet-in;
+  }
+
+  @keyframes sheet-in {
+    from {
+      transform: translateY(24px);
+      opacity: 0;
+    }
+  }
+
+  .dialog-head,
+  .dialog-body,
+  .dialog-foot {
+    padding-inline: var(--s-4);
+  }
+}
+
+/* Schermi bassi (telefono in orizzontale): terminale più compatto */
+@media (max-height: 520px) {
+  .console-dock {
+    height: 96px;
+  }
+}

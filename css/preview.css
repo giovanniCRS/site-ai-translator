@@ -1,0 +1,183 @@
+/* ---------- Card anteprima ---------- */
+.preview-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.preview-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Controlli segmentati (Originale/Tradotto, dispositivi) */
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.segmented button {
+  display: grid;
+  place-items: center;
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+
+.segmented button:hover:not(:disabled):not([aria-pressed='true']) {
+  color: var(--ink);
+  background: var(--surface-3);
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+.segmented button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.icon-segmented button {
+  padding: 6px 9px;
+}
+
+/* Selettore pagina */
+.preview-page {
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 340px;
+}
+
+.dropdown-trigger.compact {
+  padding: 6px 10px;
+  font-size: 12.5px;
+}
+
+.preview-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-left: auto;
+}
+
+.preview-tools .icon-btn {
+  height: 34px;
+}
+
+.preview-card .icon-collapse { display: none; }
+.preview-card.expanded .icon-expand { display: none; }
+.preview-card.expanded .icon-collapse { display: block; }
+
+/* ---------- Stage ---------- */
+.preview-stage {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  height: clamp(380px, 64vh, 780px);
+  padding: 12px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.preview-scaler {
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+}
+
+.preview-scaler[data-device='mobile'],
+.preview-scaler[data-device='tablet'] {
+  border-radius: 18px;
+  border-width: 2px;
+}
+
+.preview-viewport {
+  transform-origin: top left;
+}
+
+.preview-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.preview-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--s-5);
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-2);
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+}
+
+.preview-status[data-kind='empty'],
+.preview-status[data-kind='error'] {
+  background: var(--bg);
+}
+
+.preview-status[data-kind='error'] {
+  color: var(--danger);
+}
+
+/* ---------- Schermo intero ---------- */
+.preview-card.expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  max-width: none;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.preview-card.expanded .preview-stage {
+  flex: 1;
+  height: auto;
+}
+
+@media (max-width: 640px) {
+  .preview-page {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  /* Su telefono l'anteprima parte già in modalità mobile: i preset schermo non servono */
+  .preview-tools .segmented {
+    display: none;
+  }
+
+  .preview-stage {
+    padding: 8px;
+    height: clamp(360px, 62vh, 640px);
+  }
+}

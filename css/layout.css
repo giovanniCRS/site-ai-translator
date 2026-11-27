@@ -1,0 +1,168 @@
+/* Layout dinamico: sidebar richiudibile e disposizione a due colonne dopo il caricamento del progetto.
+   Le animazioni sono guidate da ui/sidebar-drawer.js e ui/layout-controller.js. */
+
+/* ---------- Area di lavoro ---------- */
+.work-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  max-width: var(--content-max);
+  margin-inline: auto;
+}
+
+.work-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  min-width: 0;
+}
+
+.preview-card {
+  width: 100%;
+}
+
+/* Preview sotto ai controlli (schermi stretti o prima dell'affiancamento) */
+.work-layout:not(.side-by-side) .preview-card {
+  max-width: 1120px;
+  align-self: center;
+}
+
+/* ---------- Due colonne: riquadri quadrati a sinistra, anteprima a destra ---------- */
+.work-layout.side-by-side {
+  display: grid;
+  grid-template-columns: var(--side-w) minmax(0, 1fr);
+  align-items: stretch;
+  gap: var(--s-5);
+  max-width: none;
+  min-height: 100%;
+}
+
+.work-layout.side-by-side .work-side > * {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.work-layout.side-by-side .dropzone.has-project {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  text-align: left;
+}
+
+/* Se il contenuto non ci sta, il riquadro cresce un po' invece di far traboccare i pulsanti */
+.work-layout.side-by-side .dropzone.has-project {
+  min-height: auto;
+  gap: var(--s-2);
+}
+
+.work-layout.side-by-side .dropzone.has-project .dz-icon {
+  width: 36px;
+  height: 36px;
+}
+
+.work-layout.side-by-side .dropzone.has-project .picker-row {
+  gap: var(--s-1);
+}
+
+.work-layout.side-by-side .dropzone.has-project .picker-row .btn-subtle {
+  padding-block: 6px;
+}
+
+.work-layout.side-by-side .dropzone.has-project .project-summary {
+  flex: 1;
+  justify-content: center;
+}
+
+.work-layout.side-by-side .dropzone.has-project .picker-row {
+  flex-direction: column;
+  align-items: stretch;
+  margin: 0;
+}
+
+.work-layout.side-by-side .control-card {
+  gap: var(--s-3);
+  padding: var(--s-4);
+  justify-content: space-between;
+}
+
+.work-layout.side-by-side .actions-row {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.work-layout.side-by-side .actions-row > * {
+  width: 100%;
+  justify-content: center;
+}
+
+.work-layout.side-by-side .bars-stack {
+  gap: var(--s-3);
+}
+
+/* L'altezza dell'anteprima la decide la colonna dei riquadri: lo stage parte da 0 (flex-basis)
+   perché il suo contenuto (scaler) è dimensionato proprio sull'altezza dello stage. */
+.work-layout.side-by-side .preview-card:not(.expanded) {
+  min-height: 420px;
+}
+
+.work-layout.side-by-side .preview-card:not(.expanded) .preview-stage {
+  flex: 1 1 0;
+  height: 0;
+  min-height: 0;
+}
+
+/* ---------- Sidebar richiudibile (solo desktop) ---------- */
+@media (min-width: 901px) {
+  .app {
+    transition: grid-template-columns var(--t-sidebar) var(--ease);
+  }
+
+  .app.sidebar-collapsed {
+    grid-template-columns: 0px minmax(0, 1fr);
+  }
+
+  /* Chiusa: niente bordo, niente focus nei controlli nascosti */
+  .app.sidebar-collapsed .sidebar {
+    border-right-color: transparent;
+    visibility: hidden;
+    transition: visibility 0s linear var(--t-sidebar), border-color var(--t-sidebar);
+  }
+
+  .app.sidebar-collapsed .topbar-brand {
+    display: flex;
+  }
+
+  .app.sidebar-collapsed .menu-btn {
+    display: grid;
+  }
+}
+
+/* ---------- Transizione del riassetto (View Transitions) ----------
+   I nomi vengono assegnati solo per la durata della transizione (vedi layout-controller.js):
+   un view-transition-name permanente creerebbe un containing block per gli elementi fixed. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-group(st-drop),
+::view-transition-group(st-control),
+::view-transition-group(st-preview) {
+  animation-duration: var(--t-layout);
+  animation-timing-function: var(--ease);
+}
+
+/* L'anteprima non esisteva prima: entra da destra */
+::view-transition-new(st-preview):only-child {
+  animation: preview-in var(--t-layout) var(--ease) both;
+}
+
+@keyframes preview-in {
+  from {
+    opacity: 0;
+    transform: translateX(48px);
+  }
+}
