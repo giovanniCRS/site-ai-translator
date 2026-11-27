@@ -8,6 +8,7 @@ import { serializeHtmlDoc } from '../utils/html.js';
 import { mimeFor } from '../utils/mime.js';
 import { detectSiteRoot } from '../utils/paths.js';
 import { BRIDGE_SCRIPT, buildScrollToHashScript } from './preview-bridge.js';
+import { buildStorageShim } from './preview-storage.js';
 
 const MAX_ASSET_BYTES = 6 * 1024 * 1024;        // oltre questa soglia l'asset non viene incorporato
 const CACHE_BUDGET_CHARS = 120 * 1024 * 1024;   // oltre questo budget la cache degli asset viene svuotata
@@ -222,9 +223,10 @@ export function createPreviewSource(entries, { prefix = '/' } = {}) {
   }
 
   /**
+   * @param {{ hash?: string, storage?: object|null }} [opts]  storage: dati condivisi da simulare (preview-storage)
    * @returns {Promise<{ html: string, title: string }>}
    */
-  async function buildPage(path, { hash = '' } = {}) {
+  async function buildPage(path, { hash = '', storage = null } = {}) {
     const entry = files.get(path);
     if (!entry) {
       return { html: messagePage('Pagina non trovata', `Nel progetto non esiste <code>${escapeHtml(path || '')}</code>.`), title: '' };
@@ -304,6 +306,13 @@ export function createPreviewSource(entries, { prefix = '/' } = {}) {
     const bridge = doc.createElement('script');
     bridge.textContent = BRIDGE_SCRIPT;
     doc.head.prepend(bridge);
+
+    // Memoria condivisa (cookie, localStorage): deve venire prima di tutto il resto
+    if (storage) {
+      const shim = doc.createElement('script');
+      shim.textContent = buildStorageShim(storage);
+      doc.head.prepend(shim);
+    }
 
     const scrollScript = buildScrollToHashScript(hash);
     if (scrollScript) {

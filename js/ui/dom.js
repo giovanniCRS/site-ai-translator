@@ -32,6 +32,7 @@ export const els = {
   previewPageText: byId('previewPageText'),
   previewPageList: byId('previewPageList'),
   previewExpandBtn: byId('previewExpandBtn'),
+  previewResetBtn: byId('previewResetBtn'),
   previewStage: byId('previewStage'),
   previewScaler: byId('previewScaler'),
   previewViewport: byId('previewViewport'),

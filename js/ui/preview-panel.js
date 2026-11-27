@@ -1,4 +1,5 @@
 import { PREVIEW_MESSAGE_SOURCE } from '../core/preview-bridge.js';
+import { createPreviewStorage } from '../core/preview-storage.js';
 import { createDropdown } from './dropdown.js';
 
 const DEVICE_WIDTHS = { desktop: 1280, tablet: 820, mobile: 390 };
@@ -12,8 +13,11 @@ const SMALL_SCREEN_PX = 700;
 export function createPreviewPanel(els, { logger }) {
   const {
     previewCard, previewTabOriginal, previewTabTranslated, previewPageTrigger, previewPageText, previewPageList,
-    previewExpandBtn, previewStage, previewScaler, previewViewport, previewFrame, previewStatus, deviceButtons,
+    previewExpandBtn, previewResetBtn, previewStage, previewScaler, previewViewport, previewFrame, previewStatus, deviceButtons,
   } = els;
+
+  // Cookie e localStorage condivisi tra originale e tradotto
+  const siteStorage = createPreviewStorage();
 
   const state = {
     sources: { original: null, translated: null },
@@ -94,7 +98,7 @@ export function createPreviewPanel(els, { logger }) {
     setStatus('loading', 'Preparo l\'anteprima…');
 
     try {
-      const { html } = await source.buildPage(state.path, { hash });
+      const { html } = await source.buildPage(state.path, { hash, storage: siteStorage.snapshot() });
       if (token !== state.renderToken) return; // è partito un rendering più recente
       previewFrame.srcdoc = html;
       setStatus(null);
@@ -146,6 +150,13 @@ export function createPreviewPanel(els, { logger }) {
 
   previewExpandBtn.addEventListener('click', () => setExpanded(!state.expanded));
 
+  // Dimentica cookie e dati salvati dal sito (per rivedere banner cookie, verifica età, ecc.)
+  previewResetBtn.addEventListener('click', () => {
+    siteStorage.reset();
+    logger.info('Anteprima: cookie e dati del sito azzerati.');
+    render();
+  });
+
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && state.expanded && !pageDropdown.isOpen()) setExpanded(false);
   });
@@ -155,6 +166,11 @@ export function createPreviewPanel(els, { logger }) {
     if (e.source !== previewFrame.contentWindow) return;
     const msg = e.data;
     if (!msg || msg.source !== PREVIEW_MESSAGE_SOURCE) return;
+
+    if (msg.type === 'storage') {
+      siteStorage.apply(msg);
+      return;
+    }
 
     if (msg.type === 'navigate' && currentSource()?.hasPage(msg.path)) {
       navigate(msg.path, msg.hash);
@@ -173,6 +189,7 @@ export function createPreviewPanel(els, { logger }) {
   return {
     // Nuovo progetto caricato: mostra l'originale e azzera il tradotto
     setOriginal(source) {
+      siteStorage.reset(); // nuovo progetto: nessun dato del sito precedente
       state.sources = { original: source, translated: null };
       state.mode = 'original';
       state.path = source.defaultPage;
