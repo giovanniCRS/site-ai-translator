@@ -27,7 +27,10 @@ export function formatDuration(ms) {
 export function createTimer({ valueEl, labelEl }) {
   const row = valueEl.closest('.timer-row');
   let startedAt = 0;
+  let accumulated = 0; // ms già trascorsi prima dell'ultima pausa
   let intervalId = null;
+
+  const elapsed = () => accumulated + (intervalId ? performance.now() - startedAt : 0);
 
   const render = (ms) => { valueEl.textContent = formatClock(ms); };
 
@@ -35,21 +38,42 @@ export function createTimer({ valueEl, labelEl }) {
     labelEl.textContent = label;
     row?.classList.toggle('running', state === 'running');
     row?.classList.toggle('done', state === 'done');
+    row?.classList.toggle('paused', state === 'paused');
   }
 
   function halt() {
+    const total = elapsed();
     clearInterval(intervalId);
     intervalId = null;
-    return performance.now() - startedAt;
+    accumulated = total;
+    return total;
   }
+
+  const tick = () => {
+    startedAt = performance.now();
+    intervalId = setInterval(() => render(elapsed()), 250);
+  };
 
   return {
     start() {
       halt();
-      startedAt = performance.now();
+      accumulated = 0;
       render(0);
       setState('running', 'Tempo trascorso');
-      intervalId = setInterval(() => render(performance.now() - startedAt), 250);
+      tick();
+    },
+
+    // In pausa il tempo non scorre
+    pause() {
+      if (!intervalId) return;
+      render(halt());
+      setState('paused', 'In pausa');
+    },
+
+    resume() {
+      if (intervalId) return;
+      setState('running', 'Tempo trascorso');
+      tick();
     },
 
     // Ferma il conteggio e mostra il totale; restituisce la durata in ms
@@ -62,6 +86,7 @@ export function createTimer({ valueEl, labelEl }) {
 
     reset() {
       halt();
+      accumulated = 0;
       render(0);
       setState('idle', 'Tempo trascorso');
     },

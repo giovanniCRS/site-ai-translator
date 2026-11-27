@@ -3,6 +3,7 @@
 import { createPreviewSource } from './core/preview-source.js';
 import { summarizeProject } from './core/project-summary.js';
 import { runTranslation } from './core/pipeline.js';
+import { createRunControl } from './core/run-control.js';
 import { createGroqClient } from './services/groq-client.js';
 import { initConsoleDock } from './ui/console-dock.js';
 import { initDropzone } from './ui/dropzone.js';
@@ -64,6 +65,31 @@ initDropzone(els, {
   },
 });
 
+let control = null;
+
+function setRunning(running) {
+  els.startBtn.hidden = running;
+  els.runControls.hidden = !running;
+  els.pauseBtn.disabled = false;
+  els.stopBtn.disabled = false;
+  els.pauseBtn.setAttribute('aria-pressed', 'false');
+  els.pauseLabel.textContent = 'Pausa';
+}
+
+els.pauseBtn.addEventListener('click', () => {
+  if (!control) return;
+  if (control.isPaused) control.resume();
+  else control.pause();
+});
+
+els.stopBtn.addEventListener('click', () => {
+  if (!control) return;
+  logger.warn('Terminazione richiesta: interrompo le richieste in corso.');
+  els.pauseBtn.disabled = true;
+  els.stopBtn.disabled = true;
+  control.cancel();
+});
+
 els.startBtn.addEventListener('click', async () => {
   const apiKey = settings.getApiKey();
 
@@ -76,13 +102,38 @@ els.startBtn.addEventListener('click', async () => {
 
   const options = { apiKey, model: settings.getModel(), ...language.getConfig() };
 
-  els.startBtn.disabled = true;
+  control = createRunControl({
+    onPauseChange(paused) {
+      if (control?.isCancelled) return; // la pausa è stata sciolta dalla terminazione
+      els.pauseBtn.setAttribute('aria-pressed', String(paused));
+      els.pauseLabel.textContent = paused ? 'Riprendi' : 'Pausa';
+      progress.setPaused(paused);
+      if (paused) {
+        timer.pause();
+        logger.info('Pausa: concludo la richiesta in corso, poi mi fermo. Il timer è fermo.');
+      } else {
+        timer.resume();
+        logger.info('Ripresa della traduzione.');
+      }
+    },
+  });
+
   download.hide();
+  setRunning(true);
   progress.start();
   timer.start();
 
   try {
-    const { blob, files, stats } = await runTranslation({ selectedFiles, options, client, logger, progress });
+    const { blob, files, stats, cancelled } = await runTranslation({
+      selectedFiles, options, client, logger, progress, control,
+    });
+
+    if (cancelled) {
+      const elapsed = timer.stop('Annullata dopo');
+      progress.halt('Traduzione annullata', 'Nessun file prodotto');
+      logger.warn(`Traduzione annullata dopo ${formatDuration(elapsed)}.`);
+      return;
+    }
 
     download.show(blob, options.targetLang);
     progress.complete(
@@ -97,6 +148,8 @@ els.startBtn.addEventListener('click', async () => {
     const elapsed = timer.stop('Interrotto dopo');
     logger.error(`Errore fatale dopo ${formatDuration(elapsed)}: ${err.message}`);
   } finally {
+    control = null;
+    setRunning(false);
     els.startBtn.disabled = false;
   }
 });

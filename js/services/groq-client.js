@@ -33,7 +33,7 @@ function isReasoningModel(model) {
  * @param {{ logger: { warn: (msg: string) => void } }} deps
  */
 export function createGroqClient({ logger }) {
-  async function chat(messages, { apiKey, model, retries = MAX_RETRIES }) {
+  async function chat(messages, { apiKey, model, retries = MAX_RETRIES, signal }) {
     const body = { model, messages, temperature: 0.1 };
 
     if (isReasoningModel(model)) {
@@ -49,13 +49,14 @@ export function createGroqClient({ logger }) {
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify(body),
+        signal,
       });
 
       if (res.status === 429 && attempt < retries) {
         const errText = await res.text();
         const waitSec = extractRetrySeconds(res, errText, attempt);
         logger.warn(`Rate limit (429) raggiunto. Attendo esattamente ${waitSec}s (tentativo ${attempt}/${retries})...`);
-        await sleep(waitSec * 1000);
+        await sleep(waitSec * 1000, signal);
         continue;
       }
 
@@ -66,7 +67,7 @@ export function createGroqClient({ logger }) {
 
       const data = await res.json();
       const content = data.choices?.[0]?.message?.content || '';
-      await sleep(DELAY_BETWEEN_CALLS_MS);
+      await sleep(DELAY_BETWEEN_CALLS_MS, signal);
       return content;
     }
   }

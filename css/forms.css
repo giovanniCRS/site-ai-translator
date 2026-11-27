@@ -145,6 +145,69 @@
   cursor: not-allowed;
 }
 
+.run-controls {
+  display: flex;
+  gap: var(--s-2);
+  width: 100%;
+}
+
+.run-controls[hidden] {
+  display: none;
+}
+
+.btn-run {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+
+.btn-run:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.btn-run:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-run:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-stop:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+  color: var(--danger);
+}
+
+/* In pausa il pulsante diventa "Riprendi" */
+.btn-run .icon-play,
+.btn-run[aria-pressed='true'] .icon-pause {
+  display: none;
+}
+
+.btn-run[aria-pressed='true'] .icon-play {
+  display: block;
+}
+
+.btn-run[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+
 .btn-download {
   display: none;
   background: var(--ok);

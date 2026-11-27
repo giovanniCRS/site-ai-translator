@@ -79,6 +79,12 @@ export const els = {
   envDot: byId('envDot'),
   envText: byId('envText'),
 
+  // Controlli di esecuzione
+  runControls: byId('runControls'),
+  pauseBtn: byId('pauseBtn'),
+  pauseLabel: byId('pauseLabel'),
+  stopBtn: byId('stopBtn'),
+
   // Timer
   timerLabel: byId('timerLabel'),
   timerValue: byId('timerValue'),

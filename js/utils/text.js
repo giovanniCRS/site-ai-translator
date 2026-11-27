@@ -1,4 +1,16 @@
-export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// Attesa interrompibile: con un AbortSignal già scattato (o che scatta durante l'attesa) rifiuta con AbortError
+export const sleep = (ms, signal) => new Promise((resolve, reject) => {
+  if (signal?.aborted) return reject(new DOMException('Interrotto', 'AbortError'));
+  const timer = setTimeout(() => {
+    signal?.removeEventListener('abort', onAbort);
+    resolve();
+  }, ms);
+  const onAbort = () => {
+    clearTimeout(timer);
+    reject(new DOMException('Interrotto', 'AbortError'));
+  };
+  signal?.addEventListener('abort', onAbort, { once: true });
+});
 
 export function getExt(filepath) {
   const idx = filepath.lastIndexOf('.');

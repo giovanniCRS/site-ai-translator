@@ -111,6 +111,7 @@
   }
 
   .actions-row > .btn-primary,
+  .actions-row > .run-controls,
   .actions-row > .btn-download {
     flex: 1 1 100%;
   }

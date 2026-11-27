@@ -25,11 +25,24 @@ const TRANSLATION_START = 15;
  * @param {object} params.client          client Groq
  * @param {object} params.logger          logger (info/dim/warn/error/success/node)
  * @param {object} params.progress        progresso ({ update })
- * @returns {Promise<{ blob: Blob, files: Array, stats: { translated: number, copied: number, failed: number } }>}
+ * @param {object} [params.control]       controllo pausa/termina (run-control); se assente non si può interrompere
+ * @returns {Promise<{ blob: Blob|null, files: Array, cancelled: boolean, stats: { translated: number, copied: number, failed: number } }>}
+ *          se l'utente termina, cancelled è true e blob/files sono vuoti
  *          files: entry del sito tradotto ({ relPath, getText, getBlob }) senza cartella prefisso, per l'anteprima
  */
-export async function runTranslation({ selectedFiles, options, client, logger, progress }) {
+export async function runTranslation({ selectedFiles, options, client: rawClient, logger, progress, control = null }) {
   const { apiKey, model, targetLang, langPrefix, wrapInPrefix } = options;
+
+  // Ogni chiamata API passa dal checkpoint (pausa) e porta il segnale di annullamento
+  const client = control
+    ? {
+        ...rawClient,
+        chat: async (messages, opts) => {
+          await control.checkpoint();
+          return rawClient.chat(messages, { ...opts, signal: control.signal });
+        },
+      }
+    : rawClient;
 
   // ---------- Fase 1: Scanner ----------
   logger.node(`[Fase 1: Scanner] Analisi file del progetto (Modello: ${model})...`);
@@ -66,8 +79,18 @@ export async function runTranslation({ selectedFiles, options, client, logger, p
   const stats = { translated: 0, copied: toCopy.length, failed: 0 };
   const outputFiles = [];
 
+  let cancelled = false;
+
   for (let idx = 0; idx < toTranslate.length; idx++) {
     const file = toTranslate[idx];
+
+    try {
+      await control?.checkpoint();
+    } catch {
+      cancelled = true;
+      break;
+    }
+
     const label = `Traduzione (${idx + 1}/${toTranslate.length}): ${file.relPath}`;
 
     logger.info(`Elaborazione (${idx + 1}/${toTranslate.length}): ${file.relPath}`);
@@ -103,11 +126,21 @@ export async function runTranslation({ selectedFiles, options, client, logger, p
       stats.translated++;
       logger.success(`Completato: ${file.relPath}`);
     } catch (err) {
+      if (control?.isCancelled) {
+        cancelled = true;
+        break;
+      }
       stats.failed++;
       logger.error(`Errore su ${file.relPath}: ${err.message}`);
       archive.add(file.relPath, await file.getBlob()); // fallback: copia l'originale
       outputFiles.push(file);
     }
+  }
+
+  // Terminata dall'utente: si scarta tutto, nessun archivio
+  if (cancelled) {
+    logger.warn('Traduzione annullata: nessun file viene prodotto.');
+    return { blob: null, files: [], stats, cancelled: true };
   }
 
   // ---------- Fase 3: Saver ----------
@@ -120,5 +153,5 @@ export async function runTranslation({ selectedFiles, options, client, logger, p
   }
 
   const blob = await archive.generate();
-  return { blob, files: outputFiles, stats };
+  return { blob, files: outputFiles, stats, cancelled };
 }

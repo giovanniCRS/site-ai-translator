@@ -23,7 +23,16 @@ export function createProgress({ mainBar, mainLabel, mainPercent, subBar, subLab
 
   return {
     update,
-    start: () => mainBar.classList.remove('complete'),
+    start: () => mainBar.classList.remove('complete', 'paused', 'stopped'),
+    // Barra in pausa (striscia attenuata)
+    setPaused: (on) => mainBar.classList.toggle('paused', on),
+    // Esecuzione terminata dall'utente: niente verde "completato"
+    halt: (label, sublabel) => {
+      mainBar.classList.remove('paused');
+      mainBar.classList.add('stopped');
+      mainLabel.textContent = label;
+      subLabel.textContent = sublabel || '';
+    },
     complete: (label, sublabel) => {
       mainBar.classList.add('complete');
       update({ percent: 100, stage: 'done', label, subPercent: 100, subLabel: sublabel });

@@ -314,6 +314,10 @@
   color: var(--accent);
 }
 
+.timer-row.paused .timer-value {
+  color: var(--warn);
+}
+
 .timer-row.done .timer-value {
   color: var(--ok);
 }
@@ -374,6 +378,15 @@
 
 .bar-fill.secondary {
   background: var(--accent-line);
+}
+
+.bar-fill.paused {
+  background: var(--warn);
+  opacity: 0.8;
+}
+
+.bar-fill.stopped {
+  background: var(--ink-3);
 }
 
 .bar-fill.complete {

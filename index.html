@@ -195,6 +195,18 @@
                 <span>Avvia traduzione</span>
               </button>
 
+              <div class="run-controls" id="runControls" hidden>
+                <button type="button" class="btn-run" id="pauseBtn" aria-pressed="false">
+                  <svg class="icon-pause" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg>
+                  <svg class="icon-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4.5v15a1 1 0 0 0 1.5.86l13-7.5a1 1 0 0 0 0-1.72l-13-7.5A1 1 0 0 0 6 4.5Z"/></svg>
+                  <span id="pauseLabel">Pausa</span>
+                </button>
+                <button type="button" class="btn-run btn-stop" id="stopBtn" title="Annulla la traduzione: nessun file viene prodotto">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2.5"/></svg>
+                  <span>Termina</span>
+                </button>
+              </div>
+
               <a class="btn-download" id="downloadBtn" href="#" download="site-translated.zip">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>
